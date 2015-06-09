@@ -73,6 +73,8 @@ libgstrtp_la_SOURCES = \
 	gstrtpsv3vdepay.c \
 	gstrtptheoradepay.c \
 	gstrtptheorapay.c \
+	gstrtptx3gpay.c \
+	gstrtptx3gdepay.c \
 	gstrtpvorbisdepay.c \
 	gstrtpvorbispay.c  \
 	gstrtpvp8depay.c \
@@ -170,6 +172,8 @@ noinst_HEADERS =			\
 	gstrtpsv3vdepay.h \
 	gstrtptheoradepay.h \
 	gstrtptheorapay.h \
+	gstrtptx3gdepay.h \
+    gstrtptx3gpay.h \
 	gstrtpvorbisdepay.h \
 	gstrtpvorbispay.h \
 	gstrtpvp8depay.h \
