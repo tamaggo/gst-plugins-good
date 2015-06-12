@@ -31,33 +31,6 @@ GST_DEBUG_CATEGORY_STATIC (gst_rtp_pay_debug);
 #define GST_CAT_DEFAULT gst_rtp_pay_debug
 
 /*
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |C| CV  |D|0|0|0|     ETYPE     |  MBZ                          |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                          Frag_offset                          |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *
- * C: caps inlined flag
- *   When C set, first part of payload contains caps definition. Caps definition
- *   starts with variable-length length prefix and then a string of that length.
- *   the length is encoded in big endian 7 bit chunks, the top 1 bit of a byte
- *   is the continuation marker and the 7 next bits the data. A continuation
- *   marker of 1 means that the next byte contains more data.
- *
- * CV: caps version, 0 = caps from SDP, 1 - 7 inlined caps
- * D: delta unit buffer
- * ETYPE: type of event. Payload contains the event, prefixed with a
- *        variable length field.
- *   0 = NO event
- *   1 = GST_EVENT_TAG
- *   2 = GST_EVENT_CUSTOM_DOWNSTREAM
- *   3 = GST_EVENT_CUSTOM_BOTH
- *   4 = GST_EVENT_STREAM_START
- */
-
-/*
 *   0                   1                   2                   3
 *   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -373,7 +346,7 @@ gst_rtp_tx3g_pay_create_from_adapter (GstRtpTX3GPay * rtptx3gpay,
        */
 
       flags.packet_type = GST_RTP_TX3G_P_FRAGMENT_TEXT;
-      payload[3] = frag_count << 4 | frag_index;
+      payload[3] = frag_count << 4 | frag_index++;
       payload[4] = sdur >> 16;
       payload[5] = sdur >> 8;
       payload[6] = sdur & 0xff;

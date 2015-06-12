@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) <2010> Wim Taymans <wim.taymans@gmail.com>
+ * Copyright (C) <2015> Tamaggo
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -107,10 +107,25 @@ gst_rtp_tx3g_depay_finalize (GObject * object)
 }
 
 static void
+gst_rtp_tx3g_depay_free_frag_array (GstRtpTX3GDepay * rtptx3gdepay)
+{
+
+  for (int f = 0; f < rtptx3gdepay->frag_count; f++) {
+    if (rtptx3gdepay->frag_array[f]) {
+      gst_buffer_unref (rtptx3gdepay->frag_array[f]);
+      rtptx3gdepay->frag_array[f] = NULL;
+    }
+  }
+  rtptx3gdepay->frag_count = 0;
+}
+
+static void
 gst_rtp_tx3g_depay_reset (GstRtpTX3GDepay * rtptx3gdepay, gboolean full)
 {
   gst_adapter_clear (rtptx3gdepay->adapter);
+  gst_rtp_tx3g_depay_free_frag_array (rtptx3gdepay);
 }
+
 
 
 static gboolean
@@ -145,8 +160,7 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
   guint32 sdur = 0;
   guint sample_len;
   guint tx3g_header_len = 0;
-  __attribute__ ((unused)) guint frag_index;
-  __attribute__ ((unused)) guint frag_count;
+  guint8 frag_index = 0;
   GstRtpTX3GDepay *rtptx3gdepay;
   GstBuffer *subbuf, *outbuf = NULL;
   gint payload_len;
@@ -202,8 +216,12 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
     sample_len <<= 8;
     sample_len |= payload[8];
     tx3g_header_len = 9;
-    frag_count = 1;
     frag_index = 1;
+
+    gst_rtp_tx3g_depay_free_frag_array (rtptx3gdepay);
+    rtptx3gdepay->frag_count = 1;
+
+
   } else if (flags.packet_type == GST_RTP_TX3G_DP_FRAGMENT_TEXT) {
     /*
      * Type 2 Header
@@ -227,8 +245,12 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
      *   Indicates the size (in bytes) of the original whole text sample to
      *   which this fragment belongs
      */
-    frag_count = payload[3] >> 4;
     frag_index = payload[3] & 0x0F;
+
+    if (frag_index == 1) {
+      gst_rtp_tx3g_depay_free_frag_array (rtptx3gdepay);
+      rtptx3gdepay->frag_count = payload[3] >> 4;
+    }
 
     sidx = payload[7];
     sdur = payload[4];
@@ -242,12 +264,25 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
     tx3g_header_len = 10;
   }
 
-  /* subbuffer skipping the 8 header bytes */
+  /* subbuffer skipping the header bytes */
   subbuf = gst_rtp_buffer_get_payload_subbuffer (&rtp, tx3g_header_len, -1);
-  gst_adapter_push (rtptx3gdepay->adapter, subbuf);
+
+  if (frag_index > 0) {
+    rtptx3gdepay->frag_array[frag_index - 1] = subbuf;
+    gst_buffer_ref (subbuf);
+  }
 
   if (gst_rtp_buffer_get_marker (&rtp)) {
     guint avail;
+
+    for (int f = 0; f < rtptx3gdepay->frag_count; f++) {
+      if (rtptx3gdepay->frag_array[f] == NULL) {
+        goto wrong_frag;
+      }
+      gst_adapter_push (rtptx3gdepay->adapter, rtptx3gdepay->frag_array[f]);
+    }
+
+    gst_rtp_tx3g_depay_free_frag_array (rtptx3gdepay);
 
     /* take the buffer */
     avail = gst_adapter_available (rtptx3gdepay->adapter);
@@ -282,15 +317,16 @@ empty_packet:
     gst_rtp_buffer_unmap (&rtp);
     return NULL;
   }
-/*
+
 wrong_frag:
   {
     gst_adapter_clear (rtptx3gdepay->adapter);
+    gst_rtp_tx3g_depay_free_frag_array (rtptx3gdepay);
     gst_rtp_buffer_unmap (&rtp);
     GST_LOG_OBJECT (rtptx3gdepay, "wrong fragment, skipping");
     return NULL;
   }
-*/
+
 }
 
 static GstStateChangeReturn

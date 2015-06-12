@@ -73,6 +73,9 @@ struct _GstRtpTX3GDepay
 
   GstTagList *tags;
   gchar *stream_id;
+  GstBuffer* frag_array[256];
+  guint8 frag_count;
+
 };
 
 struct _GstRtpTX3GDepayClass
