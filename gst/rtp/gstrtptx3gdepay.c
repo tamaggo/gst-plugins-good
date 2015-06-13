@@ -167,6 +167,7 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
   guint8 *payload;
   GstRtpTX3GDepayPacketFlags flags;
   GstRTPBuffer rtp = { NULL };
+  GstClockTime timestamp = GST_BUFFER_TIMESTAMP (buf);
 
   rtptx3gdepay = GST_RTP_TX3G_DEPAY (depayload);
 
@@ -298,8 +299,10 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
       gst_buffer_unref (outbuf);
       outbuf = temp;
 
-      if (payload[0] & 0x8)
-        GST_BUFFER_FLAG_SET (outbuf, GST_BUFFER_FLAG_DELTA_UNIT);
+      GST_BUFFER_TIMESTAMP (outbuf) = timestamp;
+      GST_BUFFER_DURATION (outbuf) =
+          gst_util_uint64_scale (sdur, GST_SECOND, 90000);
+
     } else {
       gst_buffer_unref (outbuf);
       outbuf = NULL;

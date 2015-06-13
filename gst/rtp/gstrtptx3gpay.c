@@ -228,7 +228,7 @@ gst_rtp_tx3g_pay_change_state (GstElement * element, GstStateChange transition)
 
 static gboolean                 //__attribute__((optimize("O0")))
 gst_rtp_tx3g_pay_create_from_adapter (GstRtpTX3GPay * rtptx3gpay,
-    GstClockTime timestamp)
+    GstClockTime timestamp, GstClockTime duration)
 {
   guint mtu;
   guint sample_len, sample_left;
@@ -260,7 +260,8 @@ gst_rtp_tx3g_pay_create_from_adapter (GstRtpTX3GPay * rtptx3gpay,
 
   while (sample_left) {
     guint8 sidx = 0;
-    guint32 sdur = 0;
+    guint32 sdur =
+        (guint32) gst_util_uint64_scale (duration, 90000, GST_SECOND);
     guint8 *payload;
     guint payload_len;
     guint packet_len;
@@ -389,12 +390,13 @@ gst_rtp_tx3g_pay_create_from_adapter (GstRtpTX3GPay * rtptx3gpay,
 }
 
 static GstFlowReturn
-gst_rtp_tx3g_pay_flush (GstRtpTX3GPay * rtptx3gpay, GstClockTime timestamp)
+gst_rtp_tx3g_pay_flush (GstRtpTX3GPay * rtptx3gpay, GstClockTime timestamp,
+    GstClockTime duration)
 {
   GstFlowReturn ret = GST_FLOW_OK;
   GList *iter;
 
-  gst_rtp_tx3g_pay_create_from_adapter (rtptx3gpay, timestamp);
+  gst_rtp_tx3g_pay_create_from_adapter (rtptx3gpay, timestamp, duration);
 
   iter = rtptx3gpay->pending_buffers;
   while (iter) {
@@ -497,13 +499,16 @@ gst_rtp_tx3g_pay_handle_buffer (GstRTPBasePayload * basepayload,
   GstFlowReturn ret;
   GstRtpTX3GPay *rtptx3gpay;
   GstClockTime timestamp;
+  GstClockTime duration;
 
   rtptx3gpay = GST_RTP_TX3G_PAY (basepayload);
 
   timestamp = GST_BUFFER_TIMESTAMP (buffer);
 
+  duration = GST_BUFFER_DURATION (buffer);
+
   gst_adapter_push (rtptx3gpay->adapter, buffer);
-  ret = gst_rtp_tx3g_pay_flush (rtptx3gpay, timestamp);
+  ret = gst_rtp_tx3g_pay_flush (rtptx3gpay, timestamp, duration);
 
   return ret;
 }
