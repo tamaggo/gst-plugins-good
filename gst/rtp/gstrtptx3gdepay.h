@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) <2015> Tamaggo
+ * Copyright (C) <2015> Tamaggo Inc <jvidunas@tamaggo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -75,6 +75,7 @@ struct _GstRtpTX3GDepay
   gchar *stream_id;
   GstBuffer* frag_array[256];
   guint8 frag_count;
+  GHashTable* descriptor_table;
 
 };
 

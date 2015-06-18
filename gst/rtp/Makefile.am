@@ -173,7 +173,7 @@ noinst_HEADERS =			\
 	gstrtptheoradepay.h \
 	gstrtptheorapay.h \
 	gstrtptx3gdepay.h \
-    gstrtptx3gpay.h \
+	gstrtptx3gpay.h \
 	gstrtpvorbisdepay.h \
 	gstrtpvorbispay.h \
 	gstrtpvp8depay.h \

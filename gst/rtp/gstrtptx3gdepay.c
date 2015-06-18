@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) <2015> Tamaggo
+ * Copyright (C) <2015> Tamaggo Inc <jvidunas@tamaggo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -82,7 +82,7 @@ gst_rtp_tx3g_depay_class_init (GstRtpTX3GDepayClass * klass)
 
   gst_element_class_set_static_metadata (gstelement_class,
       "RTP 3GPP Timed Text depayloader", "Codec/Depayloader/Network",
-      "Extracts Timed Text buffers from RTP packets", "Tamaggo");
+      "Extracts Timed Text buffers from RTP packets per RFC 4396", "Tamaggo");
 
   gstrtpbasedepayload_class->set_caps = gst_rtp_tx3g_depay_setcaps;
   gstrtpbasedepayload_class->process = gst_rtp_tx3g_depay_process;
@@ -92,6 +92,7 @@ static void
 gst_rtp_tx3g_depay_init (GstRtpTX3GDepay * rtptx3gdepay)
 {
   rtptx3gdepay->adapter = gst_adapter_new ();
+  rtptx3gdepay->descriptor_table = g_hash_table_new (g_str_hash, g_str_equal);
 }
 
 static void
@@ -156,7 +157,7 @@ gst_rtp_tx3g_depay_setcaps (GstRTPBaseDepayload * depayload, GstCaps * caps)
 static GstBuffer *
 gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
 {
-  __attribute__ ((unused)) guint8 sidx = 0;
+  guint8 sidx = 0;
   guint32 sdur = 0;
   guint sample_len;
   guint tx3g_header_len = 0;
@@ -302,6 +303,12 @@ gst_rtp_tx3g_depay_process (GstRTPBaseDepayload * depayload, GstBuffer * buf)
       GST_BUFFER_TIMESTAMP (outbuf) = timestamp;
       GST_BUFFER_DURATION (outbuf) =
           gst_util_uint64_scale (sdur, GST_SECOND, 90000);
+
+      if (g_hash_table_contains (rtptx3gdepay->descriptor_table,
+              GINT_TO_POINTER (sidx))) {
+        //todo: attach the descriptor to the sample
+      }
+
 
     } else {
       gst_buffer_unref (outbuf);

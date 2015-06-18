@@ -1,5 +1,5 @@
 /* GStreamer
- * Copyright (C) <2015> Tamaggo
+ * Copyright (C) <2015> Tamaggo Inc <jvidunas@tamaggo.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -126,7 +126,7 @@ gst_rtp_tx3g_pay_class_init (GstRtpTX3GPayClass * klass)
 
   gst_element_class_set_static_metadata (gstelement_class,
       "RTP 3GPP Timed Text payloader", "Codec/Payloader/Network/RTP",
-      "Payload Timed Text buffers as RTP packets", "Tamaggo");
+      "Payload Timed Text buffers as RTP packets per RFC 4396", "Tamaggo");
 
   gstrtpbasepayload_class->set_caps = gst_rtp_tx3g_pay_setcaps;
   gstrtpbasepayload_class->handle_buffer = gst_rtp_tx3g_pay_handle_buffer;
